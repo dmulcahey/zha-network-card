@@ -22,7 +22,7 @@ var compare = function(a, b) {
 }
 
 /** flex-table data representation and keeper */
-class DataTable {
+class DataTableZHA {
     constructor(cfg) {
         this.cols = cfg.columns;
         this.cfg = cfg;
@@ -80,7 +80,7 @@ class DataTable {
 }
 
 /** One level down, data representation for each row (including all cells) */
-class DataRow { 
+class DataRowZHA { 
     constructor(device, strict, raw_data=null) {
         this.device = device;
         this.hidden = false;
@@ -173,7 +173,7 @@ class ZHANetworkCard extends HTMLElement {
         const content = document.createElement('div');
         const style = document.createElement('style');
 
-        this.tbl = new DataTable(cfg);
+        this.tbl = new DataTableZHA(cfg);
 
         // some css style
         style.textContent = `
@@ -238,23 +238,23 @@ class ZHANetworkCard extends HTMLElement {
             (devices) => {
                 // `raw_rows` to be filled with data here, due to 'attr_as_list' it is possible to have
                 // multiple data `raw_rows` acquired into one cell(.raw_data), so re-iterate all rows
-                // to---if applicable---spawn new DataRow objects for these accordingly
-                let raw_rows = devices.map(e => new DataRow({attributes: e}, config.strict));
+                // to---if applicable---spawn new DataRowZHA objects for these accordingly
+                let raw_rows = devices.map(e => new DataRowZHA({attributes: e}, config.strict));
                 raw_rows.forEach(e => e.get_raw_data(config.columns))
 
-                // now add() the raw_data rows to the DataTable
+                // now add() the raw_data rows to the DataTableZHA
                 this.tbl.clear_rows();
                 raw_rows.forEach(row_obj => {
                     if (!row_obj.has_multiple)
                         this.tbl.add(row_obj);
                     else
                         this.tbl.add(...transpose(row_obj.raw_data).map(new_raw_data => 
-                            new DataRow(row_obj.device, row_obj.strict, new_raw_data)));
+                            new DataRowZHA(row_obj.device, row_obj.strict, new_raw_data)));
                 });
 
                 // finally set card height and insert card
                 this._setCardSize(this.tbl.rows.length);
-                // all preprocessing / rendering will be done here inside DataTable::get_rows()
+                // all preprocessing / rendering will be done here inside DataTableZHA::get_rows()
                 this._updateContent(root.getElementById('flextbl'), this.tbl.get_rows());
             }
         );
