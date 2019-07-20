@@ -3,6 +3,10 @@ Custom Lovelace card that displays ZHA network and device information
 
 This is a modified version of https://github.com/custom-cards/flex-table-card This implementation leverages the ZHA websocket API to get ZHA device information instead of using hass.states
 
+
+![Example](./screenshot.jpg)
+
+
 # Installation (quick & "dirty")
 
 * Find your homeassistent directory containing your configuration (let's say `~/.homeassistant/`)
