@@ -24,16 +24,20 @@ resources:
 
 ``` yaml
 columns:
-  - prop: name
-    name: Name
+  - name: Name
+    prop: name
+  - attr: available
+    id: available
+    modify: x || "false"
+    name: Online
   - attr: manufacturer
     name: Manufacturer
   - attr: model
     name: Model
   - attr: ieee
     name: IEEE
-  - prop: nwk
-    name: NWK
+  - name: NWK
+    prop: nwk
   - attr: rssi
     name: RSSI
   - attr: lqi
@@ -44,12 +48,14 @@ columns:
     name: Power Source
   - attr: quirk_class
     name: Quirk
+sort_by: available
 type: 'custom:zha-network-card'
 ```
 
 ## Available attributes:
 
 ```
+available
 area_id
 device_reg_id
 ieee
