@@ -25,6 +25,10 @@ var compare = function(a, b) {
 class DataTableZHA {
     constructor(cfg) {
         this.cols = cfg.columns;
+        this.sort_by = cfg.sort_by;
+        if (this.sort_by && !["+", "-"].includes(this.sort_by.slice(-1))) {
+            this.sort_by += "+";
+        }
         this.cfg = cfg;
 
         this.col_ids = this.cols.map(col => col.prop || col.attr || col.attr_as_list);
@@ -44,8 +48,8 @@ class DataTableZHA {
 
     get_rows() {
         // sorting is allowed asc/desc for one column
-        if (this.cfg.sort_by) {
-            let sort_col = this.cfg.sort_by;
+        if (this.sort_by) {
+            let sort_col = this.sort_by;
             let sort_dir = 1;
             if (sort_col) {
                 if (["-", "+"].includes(sort_col.slice(-1))) {
@@ -76,6 +80,15 @@ class DataTableZHA {
             this.rows = this.rows.slice(0, this.cfg.max_rows);
 
         return this.rows;
+    }
+
+    updateSortBy(idx) {
+        let new_sort = this.cols[idx].attr || this.cols[idx].prop;
+        if (this.sort_by && new_sort === this.sort_by.slice(0, -1)) {
+            this.sort_by = new_sort + (this.sort_by.slice(-1) === "-" ? "+" : "-");
+        } else {
+            this.sort_by = new_sort + "+";
+        }
     }
 }
 
@@ -191,7 +204,7 @@ class ZHANetworkCard extends HTMLElement {
                 <table>
                     <thead>
                         <tr>${this.tbl.headers.map(
-                          (name, idx) => `<th class="${cfg.columns[idx].align || 'left'}">${name}</th>`)
+                          (name, idx) => `<th class="${cfg.columns[idx].align || 'left'}" id="${name}">${name}</th>`)
                           .join("")}</tr>
                     </thead>
                     <tbody id='flextbl'></tbody>
@@ -256,10 +269,14 @@ class ZHANetworkCard extends HTMLElement {
                 this._setCardSize(this.tbl.rows.length);
                 // all preprocessing / rendering will be done here inside DataTableZHA::get_rows()
                 this._updateContent(root.getElementById('flextbl'), this.tbl.get_rows());
-            }
+                this.tbl.headers.map((name, idx) => {
+                    root.getElementById(name).onclick = (click) => {
+                        this.tbl.updateSortBy(idx);
+                        this._updateContent(root.getElementById('flextbl'), this.tbl.get_rows());
+                    };
+                });
+    }
         );
-
-        
     }
 
     _setCardSize(num_rows) {
