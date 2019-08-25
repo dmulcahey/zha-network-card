@@ -245,16 +245,15 @@ class ZHANetworkCard extends HTMLElement {
     // add sorting click handler to header elements
     this.tbl.headers.map((name, idx) => {
       root.getElementById(name).onclick = click => {
+        // remove previous sort by
         this.tbl.headers.map((name, idx) => {
           root.getElementById(name).classList.remove("headerSortDown");
           root.getElementById(name).classList.remove("headerSortUp");
         });
         this.tbl.updateSortBy(idx);
         if (this.tbl.sort_by.indexOf("+") != -1) {
-          root.getElementById(name).classList.remove("headerSortDown");
           root.getElementById(name).classList.add("headerSortUp");
         } else {
-          root.getElementById(name).classList.remove("headerSortUp");
           root.getElementById(name).classList.add("headerSortDown");
         }
         this._updateContent(
