@@ -208,12 +208,14 @@ class ZHANetworkCard extends HTMLElement {
               tr td.left,   th.left   { text-align: left;               }
               tr td.center, th.center { text-align: center;             }
               tr td.right,  th.right  { text-align: right;              } 
+              th             { background-color: #03a9f4; color: white; }
               tbody tr:nth-child(odd)  { background-color: var(--paper-card-background-color); }
               tbody tr:nth-child(even) { background-color: var(--secondary-background-color);  }
         `;
 
     // table skeleton, body identified with: 'zhatable'
     content.innerHTML = `
+            <div style="overflow-x:auto;">
                 <table>
                     <thead>
                         <tr>${this.tbl.headers
@@ -226,7 +228,8 @@ class ZHANetworkCard extends HTMLElement {
                     </thead>
                     <tbody id='zhatable'></tbody>
                 </table>
-                `;
+            </div>
+        `;
 
     // push css-style & table as content into the card's DOM tree
     card.appendChild(style);
