@@ -209,6 +209,12 @@ class ZHANetworkCard extends HTMLElement {
               tr td.center, th.center { text-align: center;             }
               tr td.right,  th.right  { text-align: right;              } 
               th             { background-color: #03a9f4; color: white; }
+              .headerSortDown:after,
+              .headerSortUp:after { content: ' '; position: relative; left: 2px; border: 8px solid transparent; }
+              .headerSortDown:after { top: 10px; border-top-color: white; }
+              .headerSortUp:after { bottom: 15px; border-bottom-color: white; }
+              .headerSortDown,
+              .headerSortUp { padding-right: 10px;}
               tbody tr:nth-child(odd)  { background-color: var(--paper-card-background-color); }
               tbody tr:nth-child(even) { background-color: var(--secondary-background-color);  }
         `;
@@ -239,7 +245,18 @@ class ZHANetworkCard extends HTMLElement {
     // add sorting click handler to header elements
     this.tbl.headers.map((name, idx) => {
       root.getElementById(name).onclick = click => {
+        this.tbl.headers.map((name, idx) => {
+          root.getElementById(name).classList.remove("headerSortDown");
+          root.getElementById(name).classList.remove("headerSortUp");
+        });
         this.tbl.updateSortBy(idx);
+        if (this.tbl.sort_by.indexOf("+") != -1) {
+          root.getElementById(name).classList.remove("headerSortDown");
+          root.getElementById(name).classList.add("headerSortUp");
+        } else {
+          root.getElementById(name).classList.remove("headerSortUp");
+          root.getElementById(name).classList.add("headerSortDown");
+        }
         this._updateContent(
           root.getElementById("zhatable"),
           this.tbl.get_rows()
