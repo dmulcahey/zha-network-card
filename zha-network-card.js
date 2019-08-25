@@ -5,32 +5,31 @@ transpose = m => m[0].map((x, i) => m.map(x => x[i]));
 // single items -> Array with item with length == 1
 listify = obj => (obj instanceof Array ? obj : [obj]);
 
-// simply return the args, which were passed, mmh not needed anymore here...
-//pipe = (...args) => args
-
-// a map function, which splits args to multiple vars, python-like
-//mmap =
-
 // omg, js is still very broken, trouble comparing strings? 80s? plain-C? wtf!
 var compare = function(a, b) {
-  if (typeof a == "string") return a.localeCompare(b);
-  else if (typeof b == "string") return -1 * b.localeCompare(a);
-  else return a - b;
+  if (typeof a == "string") {
+    return a.localeCompare(b);
+  } else if (typeof b == "string") {
+    return -1 * b.localeCompare(a);
+  } else {
+    return a - b;
+  }
 };
 
-/** flex-table data representation and keeper */
 class DataTableZHA {
   constructor(cfg) {
+    this.cfg = cfg;
     this.cols = cfg.columns;
     this.sort_by = cfg.sort_by;
+
     if (this.sort_by && !["+", "-"].includes(this.sort_by.slice(-1))) {
       this.sort_by += "+";
     }
-    this.cfg = cfg;
 
     this.col_ids = this.cols.map(
       col => col.prop || col.attr || col.attr_as_list
     );
+
     this.headers = this.cols
       .filter(col => !col.hidden)
       .map((col, idx) => col.name || this.col_ids[idx]);
@@ -51,6 +50,7 @@ class DataTableZHA {
     if (this.sort_by) {
       let sort_col = this.sort_by;
       let sort_dir = 1;
+
       if (sort_col) {
         if (["-", "+"].includes(sort_col.slice(-1))) {
           // "-" => descending, "+" => ascending
@@ -67,7 +67,7 @@ class DataTableZHA {
       );
 
       // if applicable sort according to config
-      if (sort_idx > -1)
+      if (sort_idx > -1) {
         this.rows.sort(
           (x, y) =>
             sort_dir *
@@ -76,17 +76,20 @@ class DataTableZHA {
               y.data[sort_idx] && y.data[sort_idx].content
             )
         );
-      else
+      } else {
         console.error(
           `config.sort_by: ${this.cfg.sort_by}, but column not found!`
         );
+      }
     }
+
     // mark rows to be hidden due to 'strict' property
     this.rows = this.rows.filter(row => !row.hidden);
 
     // truncate shown rows to 'max rows', if configured
-    if ("max_rows" in this.cfg && this.cfg.max_rows > -1)
+    if ("max_rows" in this.cfg && this.cfg.max_rows > -1) {
       this.rows = this.rows.slice(0, this.cfg.max_rows);
+    }
 
     return this.rows;
   }
@@ -122,27 +125,31 @@ class DataRowZHA {
       } else if ("prop" in col) {
         if (col.prop == "object_id") {
           return this.device.attributes.device_reg_id;
-
-          // handle device name customization
         } else if (col.prop == "name") {
+          // handle device name customization
           if (
             "user_given_name" in this.device.attributes &&
             this.device.attributes["user_given_name"]
-          )
+          ) {
             return this.device.attributes.user_given_name;
-          else return this.device.attributes.name;
+          } else {
+            return this.device.attributes.name;
+          }
         } else if (col.prop == "nwk") {
           let hex = this.device.attributes["nwk"];
           if (typeof value === "string") {
             hex = parseInt(value, 16);
           }
           return "0x" + hex.toString(16).padStart(4, "0");
-        } else return col.prop in this.device ? this.device[col.prop] : null;
+        } else {
+          return col.prop in this.device ? this.device[col.prop] : null;
+        }
       } else if ("attr_as_list" in col) {
         this.has_multiple = true;
         return this.device.attributes[col.attr_as_list];
-      } else
+      } else {
         console.error(`no selector found for col: ${col.name} - skipping...`);
+      }
       return null;
     });
   }
@@ -181,16 +188,16 @@ class ZHANetworkCard extends HTMLElement {
   setConfig(config) {
     // get & keep card-config and hass-interface
     const root = this.shadowRoot;
-    if (root.lastChild) root.removeChild(root.lastChild);
+
+    if (root.lastChild) {
+      root.removeChild(root.lastChild);
+    }
 
     const cfg = Object.assign({}, config);
-
-    // assemble html
     const card = document.createElement("ha-card");
     card.header = cfg.title;
     const content = document.createElement("div");
     const style = document.createElement("style");
-
     this.tbl = new DataTableZHA(cfg);
 
     // some css style
@@ -204,7 +211,8 @@ class ZHANetworkCard extends HTMLElement {
               tbody tr:nth-child(odd)  { background-color: var(--paper-card-background-color); }
               tbody tr:nth-child(even) { background-color: var(--secondary-background-color);  }
         `;
-    // table skeleton, body identified with: 'flextbl'
+
+    // table skeleton, body identified with: 'zhatable'
     content.innerHTML = `
                 <table>
                     <thead>
@@ -216,23 +224,26 @@ class ZHANetworkCard extends HTMLElement {
                           )
                           .join("")}</tr>
                     </thead>
-                    <tbody id='flextbl'></tbody>
+                    <tbody id='zhatable'></tbody>
                 </table>
                 `;
+
     // push css-style & table as content into the card's DOM tree
     card.appendChild(style);
     card.appendChild(content);
-    // append card to _root_ node...
     root.appendChild(card);
+
+    // add sorting click handler to header elements
     this.tbl.headers.map((name, idx) => {
       root.getElementById(name).onclick = click => {
         this.tbl.updateSortBy(idx);
         this._updateContent(
-          root.getElementById("flextbl"),
+          root.getElementById("zhatable"),
           this.tbl.get_rows()
         );
       };
     });
+
     this._config = cfg;
   }
 
@@ -308,7 +319,7 @@ class ZHANetworkCard extends HTMLElement {
         this._setCardSize(this.tbl.rows.length);
         // all preprocessing / rendering will be done here inside DataTableZHA::get_rows()
         this._updateContent(
-          root.getElementById("flextbl"),
+          root.getElementById("zhatable"),
           this.tbl.get_rows()
         );
       });
