@@ -292,7 +292,7 @@ class ZHANetworkCard extends HTMLElement {
       elem.onclick = this.tbl.cfg.clickable
         ? function(clk_ev) {
             // create and fire 'details-view' signal
-            let ev = new Event("show-zha-device-dialog", {
+            let ev = new Event("zha-show-device-dialog", {
               bubbles: true,
               cancelable: false,
               composed: true
