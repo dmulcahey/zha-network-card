@@ -23,6 +23,7 @@ resources:
 # Configuration
 
 ``` yaml
+clickable: true
 columns:
   - name: Name
     prop: name
@@ -51,6 +52,12 @@ columns:
 sort_by: available
 type: 'custom:zha-network-card'
 ```
+
+***Top-level options***
+
+| Name                 | Type     | Required?     | Description
+| ----                 | ----     | ------------- | -----------
+| clickable            | bool     |   optional    | Activates the devices' on-click popup dialog
 
 ## Available attributes:
 
