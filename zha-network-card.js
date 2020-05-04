@@ -1,9 +1,9 @@
 /** some helper functions, mmmh, am I the only one needing those? Am I doing something wrong? */
 // typical [[1,2,3], [6,7,8]] to [[1, 6], [2, 7], [3, 8]] converter
-transpose = m => m[0].map((x, i) => m.map(x => x[i]));
+var transpose = m => m[0].map((x, i) => m.map(x => x[i]));
 
 // single items -> Array with item with length == 1
-listify = obj => (obj instanceof Array ? obj : [obj]);
+var listify = obj => (obj instanceof Array ? obj : [obj]);
 
 // omg, js is still very broken, trouble comparing strings? 80s? plain-C? wtf!
 var compare = function(a, b) {
