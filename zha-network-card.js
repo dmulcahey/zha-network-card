@@ -1,12 +1,12 @@
 /** some helper functions, mmmh, am I the only one needing those? Am I doing something wrong? */
 // typical [[1,2,3], [6,7,8]] to [[1, 6], [2, 7], [3, 8]] converter
-var transpose = m => m[0].map((x, i) => m.map(x => x[i]));
+var transpose = (m) => m[0].map((x, i) => m.map((x) => x[i]));
 
 // single items -> Array with item with length == 1
-var listify = obj => (obj instanceof Array ? obj : [obj]);
+var listify = (obj) => (obj instanceof Array ? obj : [obj]);
 
 // omg, js is still very broken, trouble comparing strings? 80s? plain-C? wtf!
-var compare = function(a, b) {
+var compare = function (a, b) {
   if (typeof a == "string") {
     return a.localeCompare(b);
   } else if (typeof b == "string") {
@@ -27,18 +27,18 @@ class DataTableZHA {
     }
 
     this.col_ids = this.cols.map(
-      col => col.prop || col.attr || col.attr_as_list
+      (col) => col.prop || col.attr || col.attr_as_list
     );
 
     this.headers = this.cols
-      .filter(col => !col.hidden)
+      .filter((col) => !col.hidden)
       .map((col, idx) => col.name || this.col_ids[idx]);
 
     this.rows = [];
   }
 
   add(...rows) {
-    this.rows.push(...rows.map(row => row.render_data(this.cols)));
+    this.rows.push(...rows.map((row) => row.render_data(this.cols)));
   }
 
   clear_rows() {
@@ -60,9 +60,9 @@ class DataTableZHA {
       }
 
       // determine col-by-idx to be sorted with...
-      var sort_idx = this.cols.findIndex(col =>
+      var sort_idx = this.cols.findIndex((col) =>
         ["id", "attr", "prop", "attr_as_list"].some(
-          attr => attr in col && sort_col == col[attr]
+          (attr) => attr in col && sort_col == col[attr]
         )
       );
 
@@ -84,7 +84,7 @@ class DataTableZHA {
     }
 
     // mark rows to be hidden due to 'strict' property
-    this.rows = this.rows.filter(row => !row.hidden);
+    this.rows = this.rows.filter((row) => !row.hidden);
 
     // truncate shown rows to 'max rows', if configured
     if ("max_rows" in this.cfg && this.cfg.max_rows > -1) {
@@ -116,7 +116,7 @@ class DataRowZHA {
   }
 
   get_raw_data(col_cfgs) {
-    this.raw_data = col_cfgs.map(col => {
+    this.raw_data = col_cfgs.map((col) => {
       // collect the "raw" data from the requested source(s)
       if ("attr" in col) {
         return col.attr in this.device.attributes
@@ -166,10 +166,10 @@ class DataRowZHA {
         pre: cfg.prefix || "",
         suf: cfg.suffix || "",
         css: cfg.align || "left",
-        hide: cfg.hidden
+        hide: cfg.hidden,
       });
     });
-    this.hidden = this.data.some(data => data === null);
+    this.hidden = this.data.some((data) => data === null);
     return this;
   }
 }
@@ -179,7 +179,7 @@ class ZHANetworkCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({
-      mode: "open"
+      mode: "open",
     });
     this.card_height = 1;
     this.tbl = null;
@@ -227,8 +227,9 @@ class ZHANetworkCard extends HTMLElement {
                         <tr>${this.tbl.headers
                           .map(
                             (name, idx) =>
-                              `<th class="${cfg.columns[idx].align ||
-                                "left"}" id="${name}">${name}</th>`
+                              `<th class="${
+                                cfg.columns[idx].align || "left"
+                              }" id="${name}">${name}</th>`
                           )
                           .join("")}</tr>
                     </thead>
@@ -244,7 +245,7 @@ class ZHANetworkCard extends HTMLElement {
 
     // add sorting click handler to header elements
     this.tbl.headers.map((name, idx) => {
-      root.getElementById(name).onclick = click => {
+      root.getElementById(name).onclick = (click) => {
         // remove previous sort by
         this.tbl.headers.map((name, idx) => {
           root.getElementById(name).classList.remove("headerSortDown");
@@ -270,11 +271,11 @@ class ZHANetworkCard extends HTMLElement {
     // callback for updating the cell-contents
     element.innerHTML = rows
       .map(
-        row =>
+        (row) =>
           `<tr id="device_row_${
             row.device.attributes.device_reg_id
           }">${row.data
-            .map(cell =>
+            .map((cell) =>
               !cell.hide
                 ? `<td class="${cell.css}">${cell.pre}${cell.content}${cell.suf}</td>`
                 : ""
@@ -284,21 +285,26 @@ class ZHANetworkCard extends HTMLElement {
       .join("");
 
     // if configured, set clickable row to show device popup-dialog
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const elem = this.shadowRoot.getElementById(
         `device_row_${row.device.attributes.device_reg_id}`
       );
+      const root = this.shadowRoot;
       // bind click()-handler to row (if configured)
       elem.onclick = this.tbl.cfg.clickable
-        ? function(clk_ev) {
-            // create and fire 'details-view' signal
-            let ev = new Event("zha-show-device-dialog", {
+        ? function (clk_ev) {
+            let ev = new Event("location-changed", {
               bubbles: true,
               cancelable: false,
-              composed: true
+              composed: true,
             });
-            ev.detail = { ieee: row.device.attributes.ieee };
-            this.dispatchEvent(ev);
+            ev.detail = { replace: false };
+            history.pushState(
+              null,
+              "",
+              "/config/devices/device/" + row.device.attributes.device_reg_id
+            );
+            root.dispatchEvent(ev);
           }
         : null;
     });
@@ -310,25 +316,25 @@ class ZHANetworkCard extends HTMLElement {
 
     hass
       .callWS({
-        type: "zha/devices"
+        type: "zha/devices",
       })
-      .then(devices => {
+      .then((devices) => {
         // `raw_rows` to be filled with data here, due to 'attr_as_list' it is possible to have
         // multiple data `raw_rows` acquired into one cell(.raw_data), so re-iterate all rows
         // to---if applicable---spawn new DataRowZHA objects for these accordingly
         let raw_rows = devices.map(
-          e => new DataRowZHA({ attributes: e }, config.strict)
+          (e) => new DataRowZHA({ attributes: e }, config.strict)
         );
-        raw_rows.forEach(e => e.get_raw_data(config.columns));
+        raw_rows.forEach((e) => e.get_raw_data(config.columns));
 
         // now add() the raw_data rows to the DataTableZHA
         this.tbl.clear_rows();
-        raw_rows.forEach(row_obj => {
+        raw_rows.forEach((row_obj) => {
           if (!row_obj.has_multiple) this.tbl.add(row_obj);
           else
             this.tbl.add(
               ...transpose(row_obj.raw_data).map(
-                new_raw_data =>
+                (new_raw_data) =>
                   new DataRowZHA(row_obj.device, row_obj.strict, new_raw_data)
               )
             );
