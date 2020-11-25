@@ -310,22 +310,54 @@ class ZHANetworkCard extends HTMLElement {
     });
   }
 
-  set hass(hass) {
-    const config = this._config;
-    const root = this.shadowRoot;
-
-    hass
+  async init(hass, config, root) {
+    await hass
       .callWS({
         type: "zha/devices",
       })
-      .then((devices) => {
+      .then(async (devices) => {
         // `raw_rows` to be filled with data here, due to 'attr_as_list' it is possible to have
         // multiple data `raw_rows` acquired into one cell(.raw_data), so re-iterate all rows
         // to---if applicable---spawn new DataRowZHA objects for these accordingly
-        let raw_rows = devices.map(
+        const raw_rows = devices.map(
           (e) => new DataRowZHA({ attributes: e }, config.strict)
         );
-        raw_rows.forEach((e) => e.get_raw_data(config.columns));
+        const read_sw_build_id = config.columns.filter((col) => col.prop == "sw_build_id");
+        await Promise.allSettled(raw_rows.map(async (e) => {
+          if (read_sw_build_id && e.device.attributes.available) {
+            // retrieving cluster attributes requires additional ws calls
+            await hass.callWS({
+              type: "zha/devices/clusters",
+              ieee: e.device.attributes.ieee
+            }).then(async (clusters) => {
+              for (const cluster of clusters) {
+                if (cluster["type"] == "in" && cluster["name"] == "Basic") {
+                  e.device.sw_build_id = await hass.callWS({
+                    type: "zha/devices/clusters/attributes/value",
+                    "ieee": e.device.attributes.ieee,
+                    "endpoint_id": cluster.endpoint_id,
+                    "cluster_id": cluster.id,
+                    "cluster_type": "in",
+                    "attribute": 0x4000,
+                  }).then((value) => {
+                    console.log("DEBUG: %s (%s) has sw_build_id %s", e.device.attributes.ieee, JSON.stringify(e.device.attributes.user_given_name || e.device.attributes.name), value)
+                    return value
+                  }).catch((error) => {
+                    console.log("DEBUG: failed to retrieve sw_build_id for device %s: %s", e.device.attributes.ieee, JSON.stringify(error))
+                    return error.message
+                  });
+                }
+              }
+            }).catch((error) => {
+              console.log("DEBUG: failed to retrieve clusters for device %s: %s", e.device.attributes.ieee, JSON.stringify(error))
+              return error.message
+            });
+          } else {
+            console.log("DEBUG: %s", JSON.stringify(error))
+            e.device.sw_build_id = "N/A"
+          }
+          e.get_raw_data(config.columns)
+        }));
 
         // now add() the raw_data rows to the DataTableZHA
         this.tbl.clear_rows();
@@ -348,6 +380,17 @@ class ZHANetworkCard extends HTMLElement {
           this.tbl.get_rows()
         );
       });
+  }
+
+  set hass(hass) {
+    console.log("DEBUG: set hass(hass) is called")
+    const config = this._config;
+    const root = this.shadowRoot;
+
+    if (!this.initialized) {
+      this.initialized = true
+      this.init(hass, config, root);
+    }
   }
 
   _setCardSize(num_rows) {
