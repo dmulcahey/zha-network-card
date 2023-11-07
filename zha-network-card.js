@@ -307,6 +307,11 @@ class ZHANetworkCard extends HTMLElement {
             root.dispatchEvent(ev);
           }
         : null;
+      elem.onauxclick = this.tbl.cfg.clickable
+        ? function (clk_ev) {
+             window.open("/config/devices/device/" + row.device.attributes.device_reg_id);
+          }
+        : null;
     });
   }
 
